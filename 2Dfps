@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D 총 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #222;
+            font-family: Arial, sans-serif;
+        }
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 600px;
+        }
+        canvas {
+            display: block;
+            background: #111;
+            border: 2px solid #555;
+        }
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #fff;
+            font-size: 16px;
+            z-index: 10;
+        }
+        #stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        .stat {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 12px;
+            border: 1px solid #666;
+            border-radius: 4px;
+        }
+        #shopBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 10px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 10;
+        }
+        #shopBtn:hover {
+            background: #45a049;
+        }
+        #shop {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 100;
+            display: none;
+            min-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            color: #fff;
+        }
+        #shop h2 {
+            margin-top: 0;
+            text-align: center;
+            color: #4CAF50;
+        }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 8px 0;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+        }
+        .shop-item-info {
+            flex: 1;
+        }
+        .shop-item-name {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .shop-item-level {
+            font-size: 12px;
+            color: #aaa;
+        }
+        .shop-item-btn {
+            padding: 8px 15px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        .shop-item-btn:hover {
+            background: #45a049;
+        }
+        .shop-item-btn:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .close-btn:hover {
+            background: #cc0000;
+        }
+        #startMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        #startMenu h1 {
+            font-size: 48px;
+            color: #4CAF50;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #4CAF50;
+        }
+        #startMenu p {
+            font-size: 18px;
+            color: #aaa;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        #startBtn {
+            padding: 15px 40px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 24px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        #startBtn:hover {
+            background: #45a049;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startMenu">
+            <h1>🎮 2D 총 게임</h1>
+            <p>적을 잡아 코인을 모으고<br>상점에서 능력을 강화하세요!</p>
+            <button id="startBtn">게임 시작</button>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div id="ui">
+            <div id="stats">
+                <div class="stat">💣 총알: <span id="ammo">30</span></div>
+                <div class="stat">❤️ HP: <span id="hp">100</span></div>
+                <div class="stat">🪙 코인: <span id="coins">0</span></div>
+            </div>
+        </div>
+        <button id="shopBtn">🏪 상점</button>
+        <div id="shop">
+            <button class="close-btn" onclick="game.toggleShop()">X</button>
+            <h2>🏪 상점</h2>
+            <div id="shopItems"></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        class Game {
+            constructor() {
+                this.player = new Player(canvas.width / 2, canvas.height / 2);
+                this.enemies = [];
+                this.bullets = [];
+                this.particles = [];
+                this.coins = [];
+                this.shopOpen = false;
+                
+                this.gameRunning = true;
+                this.enemySpawnTimer = 0;
+                this.enemySpawnRate = 80;
+
+                // 플레이어 능력치
+                this.stats = {
+                    maxHp: 100,
+                    damage: 25,
+                    defense: 0,
+                    recoverySpeed: 0.01
+                };
+
+                // 상점 아이템
+                this.shop = [
+                    { id: 'damage', name: '공격력 강화', cost: 50, level: 0, maxLevel: 10, increase: 5 },
+                    { id: 'defense', name: '방어력 강화', cost: 60, level: 0, maxLevel: 10, increase: 0.5 },
+                    { id: 'hp', name: '체력 강화', cost: 40, level: 0, maxLevel: 10, increase: 20 },
+                    { id: 'recovery', name: '회복 속도 강화', cost: 70, level: 0, maxLevel: 10, increase: 0.02 }
+                ];
+
+                this.player.hp = this.stats.maxHp;
+
+                // 이벤트 리스너
+                canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+                canvas.addEventListener('click', (e) => this.handleClick(e));
+                document.addEventListener('keydown', (e) => this.player.handleKeyDown(e));
+                document.addEventListener('keyup', (e) => this.player.handleKeyUp(e));
+                
+                document.getElementById('shopBtn').addEventListener('click', () => this.toggleShop());
+                document.getElementById('startBtn').addEventListener('click', () => this.startGame());
+
+                this.updateUI();
+                this.renderShop();
+            }
+
+            startGame() {
+                document.getElementById('startMenu').style.display = 'none';
+            }
+
+            handleMouseMove(e) {
+                const rect = canvas.getBoundingClientRect();
+                this.player.mouseX = e.clientX - rect.left;
+                this.player.mouseY = e.clientY - rect.top;
+            }
+
+            handleClick(e) {
+                if (this.shopOpen) return;
+                this.shoot();
+            }
+
+            shoot() {
+                const dx = this.player.mouseX - this.player.x;
+                const dy = this.player.mouseY - this.player.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 0) {
+                    const vx = (dx / distance) * 8;
+                    const vy = (dy / distance) * 8;
+
+                    this.bullets.push(new Bullet(this.player.x, this.player.y, vx, vy));
+                }
+            }
+
+            update() {
+                if (!this.gameRunning) return;
+                if (this.shopOpen) return;
+
+                // 플레이어 업데이트
+                this.player.update(canvas.width, canvas.height);
+
+                // 플레이어 회복
+                if (this.player.hp < this.stats.maxHp) {
+                    this.player.hp += this.stats.recoverySpeed;
+                    this.player.hp = Math.min(this.player.hp, this.stats.maxHp);
+                }
+
+                // 적 스폰
+                this.enemySpawnTimer++;
+                if (this.enemySpawnTimer > this.enemySpawnRate) {
+                    this.spawnEnemy();
+                    this.enemySpawnTimer = 0;
+                    this.enemySpawnRate = Math.max(40, this.enemySpawnRate - 2);
+                }
+
+                // 적 업데이트
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    this.enemies[i].update(this.player.x, this.player.y);
+                    this.enemies[i].hp += 0.1; // 적 회복
+
+                    // 적-플레이어 충돌
+                    const dist = Math.hypot(
+                        this.enemies[i].x - this.player.x,
+                        this.enemies[i].y - this.player.y
+                    );
+
+                    if (dist < 15 + 10) {
+                        const damage = Math.max(1, 5 - this.stats.defense);
+                        this.player.hp -= damage;
+
+                        if (this.player.hp <= 0) {
+                            this.gameRunning = false;
+                            alert('게임 오버! 최종 코인: ' + this.player.coins);
+                            location.reload();
+                        }
+                        continue;
+                    }
+
+                    // 총알-적 충돌
+                    for (let j = this.bullets.length - 1; j >= 0; j--) {
+                        const bulletDist = Math.hypot(
+                            this.bullets[j].x - this.enemies[i].x,
+                            this.bullets[j].y - this.enemies[i].y
+                        );
+
+                        if (bulletDist < 5 + 10) {
+                            this.enemies[i].hp -= this.stats.damage;
+                            this.bullets.splice(j, 1);
+
+                            if (this.enemies[i].hp <= 0) {
+                                // 파티클 효과
+                                for (let k = 0; k < 5; k++) {
+                                    this.particles.push(new Particle(
+                                        this.enemies[i].x,
+                                        this.enemies[i].y,
+                                        (Math.random() - 0.5) * 6,
+                                        (Math.random() - 0.5) * 6,
+                                        'red'
+                                    ));
+                                }
+
+                                // 코인 드롭
+                                const coins = 10 + Math.floor(Math.random() * 20);
+                                this.coins.push({
+                                    x: this.enemies[i].x,
+                                    y: this.enemies[i].y,
+                                    amount: coins,
+                                    life: 60
+                                });
+
+                                this.player.coins += coins;
+                                this.enemies.splice(i, 1);
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // 총알 업데이트
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    this.bullets[i].update();
+                    if (this.bullets[i].isOutOfBounds(canvas.width, canvas.height)) {
+                        this.bullets.splice(i, 1);
+                    }
+                }
+
+                // 파티클 업데이트
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    this.particles[i].update();
+                    if (this.particles[i].life <= 0) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+
+                // 코인 업데이트
+                for (let i = this.coins.length - 1; i >= 0; i--) {
+                    this.coins[i].life--;
+                    if (this.coins[i].life <= 0) {
+                        this.coins.splice(i, 1);
+                    }
+                }
+            }
+
+            spawnEnemy() {
+                const side = Math.floor(Math.random() * 4);
+                let x, y;
+
+                switch (side) {
+                    case 0: x = Math.random() * canvas.width; y = -20; break;
+                    case 1: x = canvas.width + 20; y = Math.random() * canvas.height; break;
+                    case 2: x = Math.random() * canvas.width; y = canvas.height + 20; break;
+                    case 3: x = -20; y = Math.random() * canvas.height; break;
+                }
+
+                this.enemies.push(new Enemy(x, y, 40 + this.enemies.length * 5));
+            }
+
+            draw() {
+                // 배경
+                ctx.fillStyle = '#111';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 그리드 (선택)
+                ctx.strokeStyle = '#222';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < canvas.width; i += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, 0);
+                    ctx.lineTo(i, canvas.height);
+                    ctx.stroke();
+                }
+                for (let i = 0; i < canvas.height; i += 50) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i);
+                    ctx.lineTo(canvas.width, i);
+                    ctx.stroke();
+                }
+
+                // 플레이어 그리기
+                this.player.draw(ctx);
+
+                // 총알 그리기
+                for (let bullet of this.bullets) {
+                    bullet.draw(ctx);
+                }
+
+                // 적 그리기
+                for (let enemy of this.enemies) {
+                    enemy.draw(ctx);
+                }
+
+                // 파티클 그리기
+                for (let particle of this.particles) {
+                    particle.draw(ctx);
+                }
+
+                // 코인 표시
+                ctx.fillStyle = '#FFD700';
+                ctx.font = 'bold 14px Arial';
+                for (let coin of this.coins) {
+                    const alpha = coin.life / 60;
+                    ctx.globalAlpha = alpha;
+                    ctx.fillText('+' + coin.amount, coin.x, coin.y);
+                    coin.y -= 1;
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            toggleShop() {
+                this.shopOpen = !this.shopOpen;
+                document.getElementById('shop').style.display = this.shopOpen ? 'block' : 'none';
+                if (this.shopOpen) {
+                    this.renderShop();
+                    this.updateUI();
+                }
+            }
+
+            buyUpgrade(id) {
+                const item = this.shop.find(i => i.id === id);
+                if (!item || item.level >= item.maxLevel) return;
+                if (this.player.coins < item.cost) return;
+
+                this.player.coins -= item.cost;
+                item.level++;
+                item.cost = Math.floor(item.cost * 1.2);
+
+                switch (id) {
+                    case 'damage':
+                        this.stats.damage += item.increase;
+                        break;
+                    case 'defense':
+                        this.stats.defense += item.increase;
+                        break;
+                    case 'hp':
+                        this.stats.maxHp += item.increase;
+                        this.player.hp += item.increase;
+                        break;
+                    case 'recovery':
+                        this.stats.recoverySpeed += item.increase;
+                        break;
+                }
+
+                this.renderShop();
+                this.updateUI();
+            }
+
+            renderShop() {
+                const shopItems = document.getElementById('shopItems');
+                shopItems.innerHTML = '';
+
+                for (let item of this.shop) {
+                    const div = document.createElement('div');
+                    div.className = 'shop-item';
+
+                    const info = document.createElement('div');
+                    info.className = 'shop-item-info';
+
+                    const name = document.createElement('div');
+                    name.className = 'shop-item-name';
+                    name.textContent = item.name;
+
+                    const level = document.createElement('div');
+                    level.className = 'shop-item-level';
+                    level.textContent = `Lv: ${item.level}/${item.maxLevel} | 가격: ${item.cost} 🪙`;
+
+                    info.appendChild(name);
+                    info.appendChild(level);
+
+                    const btn = document.createElement('button');
+                    btn.className = 'shop-item-btn';
+                    btn.textContent = '구매';
+                    btn.disabled = item.level >= item.maxLevel || this.player.coins < item.cost;
+                    btn.addEventListener('click', () => this.buyUpgrade(item.id));
+
+                    div.appendChild(info);
+                    div.appendChild(btn);
+                    shopItems.appendChild(div);
+                }
+            }
+
+            updateUI() {
+                document.getElementById('ammo').textContent = this.player.ammo;
+                document.getElementById('hp').textContent = Math.ceil(this.player.hp);
+                document.getElementById('coins').textContent = this.player.coins;
+            }
+
+            gameLoop() {
+                this.update();
+                this.draw();
+                this.updateUI();
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+
+        class Player {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.hp = 100;
+                this.ammo = 30;
+                this.coins = 0;
+                this.speed = 5;
+                this.mouseX = x;
+                this.mouseY = y;
+
+                this.keys = {};
+            }
+
+            handleKeyDown(e) {
+                this.keys[e.key.toLowerCase()] = true;
+            }
+
+            handleKeyUp(e) {
+                this.keys[e.key.toLowerCase()] = false;
+            }
+
+            update(canvasWidth, canvasHeight) {
+                if (this.keys['w'] || this.keys['arrowup']) this.y -= this.speed;
+                if (this.keys['s'] || this.keys['arrowdown']) this.y += this.speed;
+                if (this.keys['a'] || this.keys['arrowleft']) this.x -= this.speed;
+                if (this.keys['d'] || this.keys['arrowright']) this.x += this.speed;
+
+                this.x = Math.max(this.width / 2, Math.min(canvasWidth - this.width / 2, this.x));
+                this.y = Math.max(this.height / 2, Math.min(canvasHeight - this.height / 2, this.y));
+            }
+
+            draw(ctx) {
+                // 플레이어 몸통
+                ctx.fillStyle = '#0099FF';
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+                // 총 배럴
+                const dx = this.mouseX - this.x;
+                const dy = this.mouseY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const scale = distance > 0 ? 1 : 0;
+
+                if (distance > 0) {
+                    const angle = Math.atan2(dy, dx);
+                    ctx.strokeStyle = '#FFD700';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(
+                        this.x + Math.cos(angle) * 15,
+                        this.y + Math.sin(angle) * 15
+                    );
+                    ctx.stroke();
+                }
+
+                // HP 바
+                const hpBarWidth = 25;
+                const hpBarHeight = 4;
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x - hpBarWidth / 2, this.y - 15, hpBarWidth, hpBarHeight);
+                ctx.fillStyle = '#FF6B6B';
+                ctx.fillRect(this.x - hpBarWidth / 2, this.y - 15, hpBarWidth * (this.hp / 100), hpBarHeight);
+            }
+        }
+
+        class Enemy {
+            constructor(x, y, maxHp = 30) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.hp = maxHp;
+                this.maxHp = maxHp;
+                this.speed = 2;
+            }
+
+            update(playerX, playerY) {
+                const dx = playerX - this.x;
+                const dy = playerY - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 0) {
+                    this.x += (dx / distance) * this.speed;
+                    this.y += (dy / distance) * this.speed;
+                }
+            }
+
+            draw(ctx) {
+                // 빨간색 몸통
+                ctx.fillStyle = '#FF4444';
+                ctx.fillRect(this.x - this.width / 2, this.y - this.height / 2, this.width, this.height);
+
+                // 체력 바 배경 (빨간색)
+                const hpBarWidth = 25;
+                const hpBarHeight = 4;
+                ctx.fillStyle = '#AA0000';
+                ctx.fillRect(this.x - hpBarWidth / 2, this.y - 15, hpBarWidth, hpBarHeight);
+
+                // 체력 바 (초록색)
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(
+                    this.x - hpBarWidth / 2,
+                    this.y - 15,
+                    hpBarWidth * (Math.max(0, this.hp) / this.maxHp),
+                    hpBarHeight
+                );
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.radius = 7;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            isOutOfBounds(canvasWidth, canvasHeight) {
+                return this.x < 0 || this.x > canvasWidth || this.y < 0 || this.y > canvasHeight;
+            }
+        }
+
+        class Particle {
+            constructor(x, y, vx, vy, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.life = 30;
+                this.size = 5;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // 중력
+                this.life--;
+            }
+
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life / 30;
+                ctx.fillRect(this.x - this.size / 2, this.y - this.size / 2, this.size, this.size);
+                ctx.globalAlpha = 1;
+            }
+        }
+
+        const game = new Game();
+        game.gameLoop();
+    </script>
+</body>
+</html>
