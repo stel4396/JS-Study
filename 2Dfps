@@ -307,7 +307,7 @@
                     );
 
                     if (dist < 15 + 10) {
-                        const damage = Math.max(1, 5 - this.stats.defense);
+                        const damage = Math.max(1, 1 - this.stats.defense);
                         this.player.hp -= damage;
 
                         if (this.player.hp <= 0) {
