@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Developer Profile</title>
+    <style>
+        /* 1. 첫 번째 코드의 배경 디자인 */
+        body {
+            background: #1a1a2e;
+            color: #ffffff;
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden; /* 왼쪽 점이 커질 때 스크롤바 방지 */
+        }
+
+        /* 2. 첫 번째 코드의 메인 카드 스타일 */
+        .profile-card {
+            background: #16213e;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid #0f3460;
+            text-align: left; /* 리스트 가독성을 위해 왼쪽 정렬 */
+            z-index: 5;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #0f3460;
+            margin: 25px 0;
+        }
+
+        ul, ol {
+            padding-left: 20px;
+            color: #bdc3c7;
+        }
+
+        li {
+            margin-bottom: 12px;
+            transition: 0.3s;
+        }
+
+        li:hover {
+            color: #00f2fe;
+            transform: translateX(10px);
+        }
+
+        .btn-complete {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            border: none;
+            border-radius: 10px;
+            background: #4facfe;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-complete:hover {
+            background: #00f2fe;
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* 3. 두 번째 코드의 시크릿 버튼 기능 */
+        
+        /* [왼쪽 점] 화면을 집어삼키는 효과 */
+        .left-dot {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            width: 4px;
+            height: 4px;
+            background-color: #be2edd;
+            border-radius: 50%;
+            z-index: 9999;
+            transition: width 3s ease-in, height 3s ease-in, transform 3s ease-in;
+        }
+
+        .left-dot:hover {
+            width: 300vw;
+            height: 300vw;
+            transform: translate(-50%, 50%);
+            border-radius: 0%;
+            animation: vibration 0.1s infinite;
+        }
+
+        /* [오른쪽 점] 이미지 링크 버튼 */
+        .right-dot {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 4px;
+            height: 4px;
+            background-color: #00f2fe;
+            border-radius: 50%;
+            z-index: 10000;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .right-dot:hover {
+            width: 25px;
+            height: 25px;
+            background-color: #ff0055;
+            box-shadow: 0 0 20px #ff0055;
+            animation: vibration 0.1s infinite;
+        }
+
+        /* 공통 진동 애니메이션 */
+        @keyframes vibration {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(2px, -2px); }
+            50% { transform: translate(-2px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="profile-card">
+        <h1>웹 개발자 프로필</h1>
+        <p style="color: #94a3b8;">&lt; HTML, CSS, JavaScript를 공부중입니다 /&gt;</p>
+        
+        <hr>
+
+        <h2 style="color: #4facfe;">🚀 Stack</h2>
+        <ul>
+            <li><strong>Python</strong>: 기초 문법 1년 학습</li>
+            <li><strong>HTML5</strong>: 웹 표준 구조 마스터</li>
+            <li><strong>JavaScript</strong>: 학습 예정</li>
+        </ul>
+
+        <h2 style="color: #00f2fe;">📅 Today Task</h2>
+        <ol>
+            <li>HTML 4대 구조 타이핑 숙달</li>
+            <li>href, src 문법 오류 디버깅</li>
+            <li>브라우저 구동 및 최종 검증</li>
+        </ol>
+
+        <button class="btn-complete" onclick="congrats()">오늘의 학습 완료!</button>
+    </div>
+
+    <div class="left-dot"></div>
+
+    <a href="https://image.yes24.com/images/chyes24/4/5/6/d/456da7ed18ea1424fb89033102a20cfb.jpg" 
+       target="_blank" 
+       class="right-dot">
+    </a>
+
+    <script>
+        function congrats() {
+            alert("🎉 대단해요! 오늘의 성장이 기록되었습니다.");
+        }
+    </script>
+
+</body>
+</html>
